@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Free AI Background Remover</title>
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 100% Free Browser AI Background Removal Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.7/dist/bundle.js"></script>
     <style>
         body {
             user-select: none;
@@ -30,7 +32,7 @@
         <h1 class="text-xl font-bold text-blue-600 flex items-center gap-2">
             ✨ AI Background Remover
         </h1>
-        <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">GitHub Hosted</span>
+        <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">100% Free AI</span>
     </header>
 
     <!-- Main Content -->
@@ -55,10 +57,11 @@
                     <img id="resultImage" class="max-h-full max-w-full object-contain" alt="Result">
                 </div>
 
-                <!-- Loading Spinner -->
-                <div id="loadingUI" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-2">
+                <!-- Loading Spinner & Progress -->
+                <div id="loadingUI" class="hidden absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-2 p-4 text-center">
                     <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p class="text-xs font-semibold text-blue-600">Background Processing...</p>
+                    <p id="loadingText" class="text-xs font-semibold text-blue-600">AI Background Remove Ho Raha Hai...</p>
+                    <p class="text-[10px] text-gray-400">Pehli baar AI model download hone me 5-10 seconds lag sakte hain.</p>
                 </div>
             </div>
 
@@ -90,6 +93,7 @@
         const previewContainer = document.getElementById('previewContainer');
         const resultImage = document.getElementById('resultImage');
         const loadingUI = document.getElementById('loadingUI');
+        const loadingText = document.getElementById('loadingText');
 
         selectBtn.addEventListener('click', () => imageInput.click());
         uploadBox.addEventListener('click', () => {
@@ -104,53 +108,31 @@
             previewContainer.classList.add('hidden');
             loadingUI.classList.remove('hidden');
             downloadBtn.classList.add('hidden');
-
-            const formData = new FormData();
-            formData.append('image_file', file);
+            loadingText.innerText = "AI Model Start Ho Raha Hai...";
 
             try {
-                // Free background removal endpoint request
-                const response = await fetch('https://api.remove.bg/v1.0/removebg', {
-                    method: 'POST',
-                    headers: {
-                        'X-Api-Key': 'YOUR_FREE_REMOVEBG_API_KEY' // Yahan apni free remove.bg key daal sakte hain
-                    },
-                    body: formData
+                // Using 100% free client-side AI background removal
+                const blob = await imglyRemoveBackground(file, {
+                    progress: (key, current, total) => {
+                        if (total && total > 0) {
+                            const percent = Math.round((current / total) * 100);
+                            loadingText.innerText = `AI Processing: ${percent}%`;
+                        }
+                    }
                 });
 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    resultImage.src = url;
-                    downloadBtn.href = url;
-                    loadingUI.classList.add('hidden');
-                    previewContainer.classList.remove('hidden');
-                    downloadBtn.classList.remove('hidden');
-                } else {
-                    throw new Error("API Limit");
-                }
+                const url = URL.createObjectURL(blob);
+                resultImage.src = url;
+                downloadBtn.href = url;
+                
+                loadingUI.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                downloadBtn.classList.remove('hidden');
             } catch (err) {
-                // Reliable Fallback Processor
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        ctx.drawImage(img, 0, 0);
-                        
-                        const url = canvas.toDataURL('image/png');
-                        resultImage.src = url;
-                        downloadBtn.href = url;
-                        loadingUI.classList.add('hidden');
-                        previewContainer.classList.remove('hidden');
-                        downloadBtn.classList.remove('hidden');
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
+                console.error(err);
+                loadingUI.classList.add('hidden');
+                placeholderUI.classList.remove('hidden');
+                alert("Background removal failed. Kripya koi saaf aur clear photo upload karein.");
             }
         });
     </script>
